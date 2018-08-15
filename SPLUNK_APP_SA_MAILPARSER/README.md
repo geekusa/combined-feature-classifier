@@ -3,7 +3,7 @@
 The intent of this app is to act as a wrapper for the python library mail-parser ([https://github.com/SpamScope/mail-parser](https://github.com/SpamScope/mail-parser)) to parse a RFC5302 compliant email in Splunk as well as extract other features from an email in order to feed to a ML algorithm. The app provides a single custom command.
 
 Available at:
-[Github](https://github.com/geekusa/combined-feature-classifier)
+[Github](https://github.com/geekusa/combined-feature-classifier/tree/master/SPLUNK_APP_SA_MAILPARSER)
 
 Splunk App Available at:
 [https://splunkbase.splunk.com/app/4066/](https://splunkbase.splunk.com/app/)
