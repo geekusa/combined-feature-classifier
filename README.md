@@ -10,7 +10,7 @@ In the dawn of spam filtering there was a standard juxtaposition of ham versus s
  
 I have had an SOC analyst collect a sampling of these emails, I have a bit over 5200 emails collected in their raw form--.eml files. Around 4700 of these are in the "ignore" category but many are duplicates as more than one employee will send the same email and I have a little over 500 of the "requires investigation emails”.  I want to possibly use Splunk for this as this is a known entity in our organization and if it could be operationalized there, the better chance of it being maintained by other coworkers and because I love working with Splunk and pushing it to new limits. That being said I also plan I trying to create the model in a Python notebook as well to see how they might compare. During the last Practicum project I built some pieces in Splunk that will help with this project.
 
-### Data Cleaning
+## Data Cleaning
 This proved to live up to the 80/20 rule of data science where 80% of your time is spent cleaning the data. I had to keep coming back to fix new flaws I found in the data. For starters every email was an attachment to another email--actually to be more correct, a few were not and because of this where not usable for this purpose because they lacked the original header information. Later I had to go through each of the investigate emails with a fine toothed comb.
 
 #### SA-mailparser
@@ -24,7 +24,7 @@ It re-writes the email. Replaces the MIME boundary with human readable text, reo
 #### Quoted-printable??
 In one of the several runs of deleting the indexed data, re-clean it, and reindex it I decided to take a look at I had been seeing all throughout the emails “=20” and “=3D”, I learned these are called quoted printables in MIME formats and used a library to remove them called “quopri”. Later I realized in ever email where the text portion is it clearly states “Content-Transfer-Encoding: Quoted-printable” which is the hint that they all do this. 
 
-### Data Exploration
+## Data Exploration
 In the last practicum I built a Splunk app called [NLP Text Analytics](https://splunkbase.splunk.com/app/4066/), and here I used a portion of this app--specifically the _Counts_ dashboard to look at the textual features of the set.
 ![both_targets_counts](PROJECT_FILES/IMG/both_targets_counts.png)
 
@@ -59,7 +59,7 @@ Probably also falling in the not so surprising but good to see it validated visu
 
 Though what is also interesting here is that `.net` and `.org` swap places of importance between the two categories.
 
-### Problems Encountered 
+## Problems Encountered 
 
 One problem I did not quite uncover during EDA but showed up during ML modeling was a data leakage problem. When a large scale phishing campaign is done, often the phisher is going to send very similar and sometimes the exact same emails to many recipients. If more than one user alerts on the same email and both emails make it into the dataset, specifically one in the training set and one in the testing set, then the model has an unfair advantage at predicting the email that it really has already seen. On the flip side however I also found emails with exact same or very similar subjects that clearly were apart of the same campaign but a much different story inside of them. Here is an example of one of these types (using the unix `diff -y` command to compare the emails side-by-side):
 ![similar_but_different](PROJECT_FILES/IMG/similar_but_different.png)
@@ -68,37 +68,83 @@ Here we see the emails are similar but yet they are different enough to both be 
 
 Another issue that I had to deal with was an imbalanced dataset which was mentioned earlier in the EDA. There are plenty of real-world problems in which the event of interest is an uncommon one such as credit card fraud. However to get a model to be able to accurately detect the event and not be influenced too heavily by the negative class over-sampling or under-sampling must take place to try to make a balance. I tried using a combination of under-sampling the majority class and SMOTE or Synthetic Minority Over-sampling Technique on the positive class. I received better results by just using under-sampling of the majority class, granted this did cause a much smaller dataset than I would have liked.
 
-### ML Modeling
-I started the modeling by just working with the non-text features to see how well the predictive power stood of the features by themselves. One benefit of the much smaller dataset is that it did leave the potential for trying a broad spectrum of algorithms due to the small amount of time involved to crunch numbers. Feature sets tried:
+## ML Modeling
+I started the modeling by just working with the non-text features to see how well the predictive power stood of those features by themselves. One benefit of the much smaller dataset is that it did leave the potential for trying a broad spectrum of algorithms due to the small amount of time involved to crunch numbers. I ended up creating separate Jupyter notebooks for my trials. Though I ended up with a lot of notebooks, I found it was easy to copy one and then make some tweaks and then set it aside and then come back to it later when I needed to reference it. This did however cause issues when I wanted to make changes to the existing code, which meant either going back and fixing it in multiple locations or allowing it to drift. 
 
-#### Non-Text Features Dense
-I say dense here because I left continuous variables alone (like body length) and then did one-hot encoding for categorical values. Of all of the tests I ran, this feature set performed the worse but still predicting with over 90% accuracy.
+The different feature sets I tried were:
 
-#### Non-Text Features Binary
-Here I did not leave continuous variables alone and cut them into ranges and then did one-hot encoding for them and the categorical values so all I was left with was a sparse data frame of 1s and 0s. This performed much more balanced than the dense non-text features, more algorithms scored well with this than the dense features.
+* Non-Text Features Dense
+    * I say dense here because I left continuous variables alone (like body length) and then did one-hot encoding for categorical values. Of all of the tests I ran, this feature set performed the worse but still predicting with over 90% accuracy.
 
-#### Text Features, Cleaned, Lemmatized and No Stop words TFIDF
-Going with the traditional sparse matrix that the `TFIDFVectorizer` creates, though I elected to use my own cleaning function. Here the function removed URLs, email addresses, punctuation and numbers. The set was also lemmatized using the `spaCy` library and stop words removed (using the `spaCy` list as well). I elected to use an ngram range of 1-3 for this feature set.
+* Non-Text Features Binary
+    * Here I did not leave continuous variables alone and cut them into ranges and then did one-hot encoding for them and the categorical values so all I was left with was a sparse data frame of 1s and 0s. This performed much more balanced than the dense non-text features, more algorithms overall scored well with this feature set than the previous dense features.
 
-#### Text Features, Cleaned, Lemmatized and No Stop words TF Binary
-Similar to the set just mentioned, ngrams still set at 1-3, but here I turned off the option of `idf` (or Inverse Document Frequency) and set true the `binary` option. This set just accounts if a word is in the set or not. 
+* Text Features, Cleaned, Lemmatized and No Stop words TFIDF
+    * Going with the traditional sparse matrix that the `TFIDFVectorizer` creates, though I elected to use my own cleaning function. Here the function removed URLs, email addresses, punctuation and numbers. The set was also lemmatized using the `spaCy` library and stop words removed (using the `spaCy` list as well). I chose to use an ngram range of 1-3 for this feature set.
 
-#### Text Features, Cleaned, Lemmatized and Keep Stop words TFIDF
-Similar to the first text set but leaving stop words included and because of this I changed the ngram range to 1-4.
+* Text Features, Cleaned, Lemmatized and No Stop words TF Binary
+    * Similar to the set just mentioned, ngrams still set at 1-3, but here I turned off the option of `idf` (or Inverse Document Frequency), `norm` is sent to `None` and set true the `binary` option. This set just accounts if a word is in the set or not. When I first started trying to fulfill this idea, I neglected to set `norm` to `None`, leaving a default value of `l2` then. Though this still causes binary behaviour at one point in the process, the output still remains normalized and similar looking to the previous set. Once I figured out my folly, I then created notebooks that would reference "CompleteBinary" as the set truly and finaly was.
 
-#### Text Features, Cleaned, Lemmatized and No Stop words TFIDF, LSA
-Finally, also like the first set but then running the final output through the `TruncatedSVD` algorithm to accomplish LSA or Latent Semantic Analysis. This changes the sparse set into a dense one. 
+* Text Features, Cleaned, Lemmatized and Keep Stop words TFIDF
+    * Similar to the first text set but leaving stop words included and because of this I changed the ngram range to 1-4.
 
-#### Combined Features Dense
-This set is a combination of the first non-text set and the LSA set for text features. In order to get the LSA features to merge with the others, I had to change the LSA features back into a data frame.
+* Text Features, Cleaned, Lemmatized and No Stop words TFIDF, LSA
+    * Finally, also like the first set but then running the final output through the `TruncatedSVD` algorithm to accomplish LSA or Latent Semantic Analysis. This changes the sparse set into a dense one. I would have thought that this set would outperform the other text sets but I was dissapointed.
 
-#### Combined Features Spare/Binary
-This set is a combination of the non-text features changed to binary with the first text set that is a TFIDF. Again the TFIDF is changed back into a data frame in order to combine.
+#### Combined Features 
+I had trouble finding solid examples of the best way to go about combining text with non-text features. In the end I settled on the concept that in order for it to work, I would either need to make the non-text features sparse, or I would have to make text features dense in order to add them together. This is so that the dense features do not dominate the sparse features if I were just to combine them as is. I did see and try one idea to have one's prediction create a feature for another set or another idea to have them vote against each other. I moved away from these ideas quickly however because I felt that this 
 
-#### Combined Features Binary/Binary
-The final set of features I chose to work with was likewise a combination of the non-text features changed to binary the term-frequency binary text set. Like in the previous combination sets the TFIDF is changed back into a data frame in order to combine.
+* Combined Features Dense
+    * This set is a combination of the first non-text set and the LSA set for text features. In order to get the LSA features to merge with the others, I had to change the LSA features back into a data frame.
+
+* Combined Features Spare/Binary
+    * This set is a combination of the non-text features changed to binary with the first text set that is a TFIDF. Again the TFIDF is changed back into a data frame in order to combine.
+
+* Combined Features Binary/Binary
+    * The final set of features I chose to work with was likewise a combination of the non-text features changed to binary the term-frequency binary text set. Like in the previous combination sets the TFIDF is changed back into a data frame in order to combine.
 
 #### Algorithms Tried
-The following is the list of algorithms I tried with each set--though there were a couple of algorithms that simply don't work with a features set (such as XGB and MultinomialNB, as it will not take a negative input value).
+The following is the list of algorithms I tried with each set--though there were a couple of algorithms that simply don't work with a features set (such as XGB and MultinomialNB, as it will not take a negative input value). As mentioned previously, I could try so many different algorithms because my set was smaller. Though of course if the set was bigger, I could always do the same with just a sample of it.
+```
+LinearSVC
+SVC with RBF
+ExtraTreesClassifier
+GradientBoostingClassifier
+XGBClassifier
+MLPClassifier
+MultinomialNB
+GaussianNB
+RandomForestClassifier
+KNeighborsClassifier
+NearestCentroid
+AdaBoostClassifier
+QuadraticDiscriminantAnalysis
+GaussianProcessClassifier
+DecisionTreeClassifier
+LogisticRegression
+BaggingClassifierPassiveAggressiveClassifier
+RidgeClassifier
+SGDClassifier
+CalibratedClassifierCV
+
+```
+I created a function to collect the scores from the algorithm's performance and then later sorted the output and showed the top 3 for that particular feature set.
 
 
+#### Final Trials
+I selected two feature sets and three algorithms to explore further because to their performance and stability against this dataset. I tried multiple trials with each and also did 10-fold cross-validation. 
+
+
+## Move to Splunk
+
+Now that I had the model (or rather models) I wanted to use, the final portion of the project was that I wanted to see if I could get the same algorithms working in Splunk.
+
+## Conclusion
+
+I found that combining text and non-text features would provide a better overall model with this data set. In this way model itself after the workflow of a SOC analyst, taking into account all aspects of an email in question. I was pleased with the performance of using machine learning against this problem, with over 90% accuracy and good false-negative response, I feel like it can start providing a benefit right away.
+
+## Future Work
+As more data comes in over time I will want to continue to improve the model and provide a way for our SOC to continue to train the model. I feel there is room to bring in further features into the model. I did not deal with multi-valued fields in this model as the SA-mailparser_plus app I created for example will return a multivalued field with all of the URL lengths. 
+
+## References
+See https://github.com/geekusa/combined-feature-classifier/blob/master/PROJECT_FILES/References.md for the list of references for this paper and project.
