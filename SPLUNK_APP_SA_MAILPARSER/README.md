@@ -6,7 +6,7 @@ Available at:
 [Github](https://github.com/geekusa/combined-feature-classifier/tree/master/SPLUNK_APP_SA_MAILPARSER)
 
 Splunk App Available at:
-[https://splunkbase.splunk.com/app/4066/](https://splunkbase.splunk.com/app/)
+[https://splunkbase.splunk.com/app/4066/](https://splunkbase.splunk.com/app/4129/)
 
 Version: 1.0
 
