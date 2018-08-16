@@ -137,13 +137,13 @@ I had trouble finding solid examples of the best way to go about combining text 
 #### Hyper-parameter Tuning and Final Trials 
 I selected two feature sets and three algorithms to explore further because to their performance and stability against this dataset. The two feature sets as just mentioned were "Combined Features Spare/Binary" and "Combined Features Binary/Binary". The three algorithms selected were LinearSVC, ExtraTreesClassifier, and MLPClassifier.
 
-I first worked on tuning the hyper-parameters of the algorithms with the feature sets ([found here](https://github.com/geekusa/combined-feature-classifier/tree/master/PYTHON_NOTEBOOKS/HYPERPARAMETER_TUNING)) using GridSearchCV. Here I ran into two different problems both around the problem of grid search completely hangning. However each issue was different. 
+I first worked on tuning the hyper-parameters of the algorithms with the feature sets ([found here](https://github.com/geekusa/combined-feature-classifier/tree/master/PYTHON_NOTEBOOKS/HYPERPARAMETER_TUNING)) using GridSearchCV. Here I ran into two different problems both around the problem of grid search completely hanging. However each issue was different. 
 
 The first issue was with LinearSVC, I could make heads or tails out of it because the algorithm itself completed in seconds. After some digging I was able to find a [Github issue](https://github.com/scikit-learn/scikit-learn/issues/8918) that stated that `return_train_score` is by default set to True and could cause this. Changing this to False fixed the problem and sure enough the documentation talks about performance of the command with plans to change its default in the future. 
 
-The second issue was with MLPClassifier with the same behaviour but I already had set `return_train_score=False`. Digging again, after a combination of turning on debugging on gridsearch and the algorithm and this [Github issue](https://github.com/scikit-learn/scikit-learn/issues/5115) tipping me off, I found that the problem was with multi-threading. After setting `n_jobs` to 1, I could finally get GridSearchCV to complete.
+The second issue was with MLPClassifier with the same behavior but I already had set `return_train_score=False`. Digging again, after a combination of turning on debugging on gridsearch and the algorithm and this [Github issue](https://github.com/scikit-learn/scikit-learn/issues/5115) tipping me off, I found that the problem was with multi-threading. After setting `n_jobs` to 1, I could finally get GridSearchCV to complete.
 
-Now that I had tuned hyper-parameters, I tried multiple trials with each algorith individually and the VotingClassifier made up of the tuned algorithms([found here](https://github.com/geekusa/combined-feature-classifier/tree/master/PYTHON_NOTEBOOKS/FINAL_TRIALS)). I then finished by making a voting classifier made up of all three and running cross-validation on it. I had intended on doing such really in the first place, which was why I chose both an odd number of algorithms (so I could have a majority) and why I chose three algorithms that were very different from each other. I then ran 10-fold cross-validation. Looking at their cv results:
+Now that I had tuned hyper-parameters, I tried multiple trials with each algorithm individually and the VotingClassifier made up of the tuned algorithms([found here](https://github.com/geekusa/combined-feature-classifier/tree/master/PYTHON_NOTEBOOKS/FINAL_TRIALS)). I then finished by making a voting classifier made up of all three and running cross-validation on it. I had intended on doing such really in the first place, which was why I chose both an odd number of algorithms (so I could have a majority) and why I chose three algorithms that were very different from each other. I then ran 10-fold cross-validation. Looking at their cv results:
 
 _Combined Features Spare/Binary Cross-Validation_
 ![sparse_binary_cv](PROJECT_FILES/IMG/sparse_binary_cv.png)
@@ -173,11 +173,31 @@ Here we see that the binary/binary feature set has better false-negative perform
 
 ## Move to Splunk
 
-Now that I had the model (or rather models since we are talking about voting) I wanted to use, the final portion of the project was that I wanted to see if I could get the same algorithms working in Splunk. Recently, Splunk upgraded both their underlying scientific Python app and MLTK app, this worked out in my favor as this was the only way I was going to be able to use the MLPClassifier which had a dependency on the version of sklearn. Though now that Splunk's MLTK had MLPClassifier built-in it still did not have several algorithms I needed to complete the move. Fortunately 
+Now that I had the model (or rather models since we are talking about voting) I wanted to use, the final portion of the project was that I wanted to see if I could get the same algorithms working in Splunk. Recently, Splunk upgraded both their underlying scientific Python app and MLTK app, this worked out in my favor as this was the only way I was going to be able to use the MLPClassifier which had a dependency on the version of sklearn. Though now that Splunk's MLTK had MLPClassifier built-in it still did not have several algorithms I needed to complete the move. Fortunately, in the last Practicum, I had gained experience with doing this so I ended up adding four more algorithms to the app ([NLP Text Analytics Splunk App](https://splunkbase.splunk.com/app/4066/)) I had made in that Practicum as in my mind they are related and seemed like as good as place as any for home for the algorithms. 
+
+I added the algorithms LinearSVC, ExtraTreesClassifier, and MinMaxScaler. The last algorithm I needed already existed in Splunk's MLTK which was TfidfVectorizer, but as of version 3.4, it was missing two options that would allow a binary output. Because of this I added a customized version of TfidfVectorizer, called TFBinary, that allowed and already set these options to force binary output.
+
+I then provided the Splunk algorithms the same tuned hyperparamters that I gave Python.
+![splunk_fit](PROJECT_FILES/IMG/splunk_fit.png)
+
+I also tried adding the `VotingClassifier` algorithm, however this algorithm takes as arguments is other algorithms. I tried various ways (syntax) of trying to do this, but gave up and chalking it up to the fact that Splunk's MLTK's API does specific formatting to arguments provided to options and currently is not possible. Though probably also a reason I was quick to give up was that I knew I could just implement a hard vote (meaning majority wins) using a Splunk `eval` statement (VotingClassifier also offers a "soft" voting option).
+![vote](PROJECT_FILES/IMG/vote.png)
+
+One unsettling thing did happen, which was after doing my 80/20 split in Splunk, training my models, and then pitting them against the 20 percent test set, it kept doing perfect predictions.
+![splunk_perfect](PROJECT_FILES/IMG/splunk_perfect.png)
+
+I repeated this exercise several times with different seeds and still received the same results. Though I am not 100% sure what is going on here, one thing I do know is that MLTK is really an abstraction layer to Python, therefore there are going to be some changes and settings going on under the hood that do not exactly match what I was doing in my notebooks. 
+
+However, as a sanity check, I took 400 of the ignore emails that the models had not seen--since I had a large stash of those lying around. 
+![splunk_ignore_unseen](PROJECT_FILES/IMG/splunk_ignore_unseen.png)
+
+Seeing these results, the performance was much more in line with what I would expect. Of course the incorrect classifications in this case would be false-positives but as that was all I had I took it as a sign I was on the right course. 
+
+It was interesting doing a comparison of how the Python workflow compared to that of Splunk. They contain essentially the same steps, but the order moves around a bit. Just in Splunk all of the steps become a single search.
 
 ## Conclusion
 
-I found that combining text and non-text features would provide a better overall model with this data set. In this way model itself after the workflow of a SOC analyst, taking into account all aspects of an email in question. I was pleased with the performance of using machine learning against this problem, with over 90% accuracy and good false-negative response, I feel like it can start providing a benefit right away.
+I found that combining text and non-text features would provide a better overall model with this data set. In this way model itself after the workflow of a SOC analyst, taking into account all aspects of an email in question. I was pleased with the performance of using machine learning against this problem, with over 90% accuracy and good false-negative response, I feel like it can start providing a benefit right away in production. I was equally pleased with the experience of moving the models into Splunk. As mentioned, I can then take advantage of Splunk's pipeline and sharing the "search" with others who are not familiar with Machine Learning or even Python might be more inclined to understand what is going on.
 
 ## Future Work
 As more data comes in over time I will want to continue to improve the model and provide a way for our SOC to continue to train the model. I feel there is room to bring in further features into the model. I did not deal with multi-valued fields in this model as the SA-mailparser_plus app I created for example will return a multivalued field with all of the URL lengths. 

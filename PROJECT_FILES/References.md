@@ -16,6 +16,9 @@ Bynens, M. (n.d.). In search of the perfect URL validation regex. Retrieved from
 Chawla, N. V., Bowyer, K. W., Hall, L. O., & Kegelmeyer, W. P. (2002). SMOTE: Synthetic Minority Over-sampling Technique. Journal of Artificial Intelligence Research, 16, 321–357. https://doi.org/10.1613/jair.953
 
 
+Landauer, T. K., Foltz, P. W., & Laham, D. (1998). An introduction to latent semantic analysis. Discourse Processes, 25(2–3), 259–284. https://doi.org/10.1080/01638539809545028
+
+
 Mantuano, F. (2018). mail-parser: Tokenizer for raw mails. Python, SpamScope. Retrieved from https://github.com/SpamScope/mail-parser (Original work published 2016)
 
 
