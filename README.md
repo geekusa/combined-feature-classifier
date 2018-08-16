@@ -16,7 +16,7 @@ This project tried its hardest to live up to the 80/20 rule of data science wher
 Here I used Jupyter Python notebooks ([found here](https://github.com/geekusa/combined-feature-classifier/tree/master/PYTHON_NOTEBOOKS/CLEANING)) to keep track of my cleaning. Like I mentioned I had to come back several times and redo, so the only notebooks there are the final cleaning, though between cleanings I would index the data into Splunk so that I could analyze it. Later when I ran into a data leakage issue--more on that later--I was able to add some further investigate emails.
 
 #### SA-mailparser_plus
-I learned of a great python library called `mail-parser` (Mantuano, 2016/2018) and like my previous practicum, I decided to build a [Splunk app](https://splunkbase.splunk.com/app/4129/) with that would package a custom command wrapper around this library so it could be used in Splunk. Though I ended up making the command to to so much more than just parse an email. It also brings back all of the features I needed from the email as long as `adv_attrs` is set to True--which it is by default. 
+I learned of a great python library called `mail-parser` (Mantuano, 2016/2018; stackoverflow.com, 2015) and like my previous practicum, I decided to build a [Splunk app](https://splunkbase.splunk.com/app/4129/) with that would package a custom command wrapper around this library so it could be used in Splunk. Though I ended up making the command to to so much more than just parse an email. It also brings back all of the features I needed from the email as long as `adv_attrs` is set to True--which it is by default.
 
 #### TA-mailclient
 We had been using this app to scrape email boxes. There is another IMAP app on Splunkbase but I seemed to have good luck with this one. However there was a couple peculiar things I learned about this app. 
@@ -44,7 +44,7 @@ Next I moved onto exploring the data features that were not text. Here is where 
 One feature that immediately stood out to me and was a bit surprising at first was the length of the body from the email. 
 ![body_subject_len](PROJECT_FILES/IMG/body_subject_len.png)
 
-Ignore emails body length where more often substantially longer than investigate emails and a great indicator of class. In fact the inner quartile ranges of the two classess' body lengths did not overlap either. Stopping to think about this it seems to be the human element at play here. It would seem that more often than not those behind doing something nefarious with email tend to go the easier route and write shorter emails in order to get a user to do something, whereas an ignore email which often is a marketing email, is filled to the brim with html formatting to make their emails try to stand out as much as possible. This professional html formatting really pushes the length of the email. Subject length here also shows a similar case but not nearly as such a clear divider.
+Ignore emails body length where more often substantially longer than investigate emails and a great indicator of class. In fact the inner quartile ranges of the two classes' body lengths did not overlap either. Stopping to think about this it seems to be the human element at play here. It would seem that more often than not those behind doing something nefarious with email tend to go the easier route and write shorter emails in order to get a user to do something, whereas an ignore email which often is a marketing email, is filled to the brim with html formatting to make their emails try to stand out as much as possible. This professional html formatting really pushes the length of the email. Subject length here also shows a similar case but not nearly as such a clear divider.
 
 Another interesting though not really surprising find is that investigate emails are more likely to have an attachment. This visualization is in percentage (like a pie chart--the black sheep of statistical visualizations).
 ![attach_percent](PROJECT_FILES/IMG/attach_percent.png)
@@ -58,50 +58,21 @@ Though what is also interesting here is that `.net` and `.org` swap places of im
 
 ## Problems Encountered 
 
-One problem I did not quite uncover during EDA but showed up during ML modeling was a data leakage problem. When a large scale phishing campaign is done, often the phisher is going to send very similar and sometimes the exact same emails to many recipients. If more than one user alerts on the same email and both emails make it into the dataset, specifically one in the training set and one in the testing set, then the model has an unfair advantage at predicting the email that it really has already seen. On the flip side however I also found emails with exact same or very similar subjects that clearly were apart of the same campaign but a much different story inside of them. Here is an example of one of these types (using the unix `diff -y` command to compare the emails side-by-side):
+One problem I did not quite uncover during EDA but showed up during ML modeling was a data leakage problem. When a large scale phishing campaign is done, often the phisher is going to send very similar or the exact same emails to many recipients. If more than one user alerts on the same email and both emails make it into the dataset, specifically one in the training set and one in the testing set, then the model has an unfair advantage at predicting the email that it really has already seen. On the flip side however, I also found emails with exact same or very similar subjects that clearly were apart of the same campaign but a much different story inside of them. Here is an example of one of these types (using the unix `diff -y` command to compare the emails side-by-side):
 ![similar_but_different](PROJECT_FILES/IMG/similar_but_different.png)
 
-Here we see the emails are similar but yet they are different enough to both be included in the dataset considering they have enough differentiating attributes--like text body, from TLD, even day of the week and time of day. Why do bad actors do this? My intuition is that they are trying to evade signature detection is probably their first objective in doing this, but an auxiliary reason might be to evade the human detection in case coworkers talk and compare notes. Regardless I went through each email that had the exact same subject line or a very similar subject line in order to remove true duplicates which was time consuming. 
+Here we see the emails are similar but yet they are different enough to both be included in the dataset considering they have enough differentiating attributes--like text body, from TLD, even day of the week and time of day. Why do bad actors do this? My intuition is that they are trying to evade signature detection as probably their first objective, but an auxiliary reason might be to evade human detection in case co-recipients talk and compare notes. Regardless I went through each email that had the exact same subject line or a very similar subject line in order to remove true duplicates which was time consuming. 
 
-Another issue that I had to deal with was an imbalanced dataset which was mentioned earlier in the EDA. There are plenty of real-world problems in which the event of interest is an uncommon one such as credit card fraud. However to get a model to be able to accurately detect the event and not be influenced too heavily by the negative class over-sampling or under-sampling must take place to try to make a balance. I tried using a combination of under-sampling the majority class and SMOTE or Synthetic Minority Over-sampling Technique on the positive class. I received better results by just using under-sampling of the majority class, granted this did cause a much smaller dataset than I would have liked.
+Another issue that I had to deal with was an imbalanced dataset which was mentioned earlier in the EDA section. There are plenty of real-world problems in which the event of interest is an uncommon one such as credit card fraud (Chawla, Bowyer, Hall, & Kegelmeyer, 2002). However to get a model to be able to accurately detect the event and not be influenced too heavily by the negative class, over-sampling or under-sampling must take place to strike a balance. I tried using a combination of under-sampling the majority class and SMOTE or Synthetic Minority Over-sampling Technique on the positive class (Chawla, et al., 2002). However, I received better results by just using under-sampling of the majority class, granted this did cause a much smaller dataset than I would have liked.
 
 ## ML Modeling
-I started the modeling by just working with the non-text features to see how well the predictive power stood of those features by themselves. One benefit of the much smaller dataset is that it did leave the potential for trying a broad spectrum of algorithms due to the small amount of time involved to crunch numbers. I ended up creating separate Jupyter notebooks for my trials. Though I ended up with a lot of notebooks, I found it was easy to copy one and then make some tweaks and then set it aside and then come back to it later when I needed to reference it. This did however cause issues when I wanted to make changes to the existing code, which meant either going back and fixing it in multiple locations or allowing it to drift. 
+I started the modeling by just working with the non-text features to see how well the predictive power stood of those features by themselves. Earlier in the EDA section I showed non-text features like body and subject length, along with the sender's TLD but I also created many other numerical attributes such as number of links (meaning HTML `<a>` tags) and number of email addresses found. 
 
-The different feature sets I tried were:
-
-* Non-Text Features Dense
-    * I say dense here because I left continuous variables alone (like body length) and then did one-hot encoding for categorical values. Of all of the tests I ran, this feature set performed the worse but still predicting with over 90% accuracy.
-
-* Non-Text Features Binary
-    * Here I did not leave continuous variables alone and cut them into ranges and then did one-hot encoding for them and the categorical values so all I was left with was a sparse data frame of 1s and 0s. This performed much more balanced than the dense non-text features, more algorithms overall scored well with this feature set than the previous dense features.
-
-* Text Features, Cleaned, Lemmatized and No Stop words TFIDF
-    * Going with the traditional sparse matrix that the `TFIDFVectorizer` creates, though I elected to use my own cleaning function. Here the function removed URLs, email addresses, punctuation and numbers. The set was also lemmatized using the `spaCy` library and stop words removed (using the `spaCy` list as well). I chose to use an ngram range of 1-3 for this feature set.
-
-* Text Features, Cleaned, Lemmatized and No Stop words TF Binary
-    * Similar to the set just mentioned, ngrams still set at 1-3, but here I turned off the option of `idf` (or Inverse Document Frequency), `norm` is sent to `None` and set true the `binary` option. This set just accounts if a word is in the set or not. When I first started trying to fulfill this idea, I neglected to set `norm` to `None`, leaving a default value of `l2` then. Though this still causes binary behaviour at one point in the process, the output still remains normalized and similar looking to the previous set. Once I figured out my folly, I then created notebooks that would reference "CompleteBinary" as the set truly and finaly was.
-
-* Text Features, Cleaned, Lemmatized and Keep Stop words TFIDF
-    * Similar to the first text set but leaving stop words included and because of this I changed the ngram range to 1-4.
-
-* Text Features, Cleaned, Lemmatized and No Stop words TFIDF, LSA
-    * Finally, also like the first set but then running the final output through the `TruncatedSVD` algorithm to accomplish LSA or Latent Semantic Analysis. This changes the sparse set into a dense one. I would have thought that this set would outperform the other text sets but I was dissapointed.
-
-#### Combined Features 
-I had trouble finding solid examples of the best way to go about combining text with non-text features. In the end I settled on the concept that in order for it to work, I would either need to make the non-text features sparse, or I would have to make text features dense in order to add them together. This is so that the dense features do not dominate the sparse features if I were just to combine them as is. I did see and try one idea to have one's prediction create a feature for another set or another idea to have them vote against each other. I moved away from these ideas quickly however because I felt that this 
-
-* Combined Features Dense
-    * This set is a combination of the first non-text set and the LSA set for text features. In order to get the LSA features to merge with the others, I had to change the LSA features back into a data frame.
-
-* Combined Features Spare/Binary
-    * This set is a combination of the non-text features changed to binary with the first text set that is a TFIDF. Again the TFIDF is changed back into a data frame in order to combine.
-
-* Combined Features Binary/Binary
-    * The final set of features I chose to work with was likewise a combination of the non-text features changed to binary the term-frequency binary text set. Like in the previous combination sets the TFIDF is changed back into a data frame in order to combine.
+One benefit of the much smaller dataset is that it did leave the potential for trying a broad spectrum of algorithms due to the small amount of time involved to crunch numbers. Though of course if the set was bigger, one could always do the same with just a sample of the larger set, if fact that is a good practice to be in the habit of. I ended up creating separate Jupyter notebooks for each of my trials ([found here](https://github.com/geekusa/combined-feature-classifier/tree/master/PYTHON_NOTEBOOKS/FEATURE_TRIALS)). Nonetheless, I ended up with a lot of notebooks because of this, but I found it was easy to copy one and then make some tweaks and then set it aside and then come back to it later when I needed to reference it. This did however cause issues when I wanted to make changes to the existing code, which meant either going back and fixing it in multiple locations or allowing it to drift. 
 
 #### Algorithms Tried
-The following is the list of algorithms I tried with each set--though there were a couple of algorithms that simply don't work with a features set (such as XGB and MultinomialNB, as it will not take a negative input value). As mentioned previously, I could try so many different algorithms because my set was smaller. Though of course if the set was bigger, I could always do the same with just a sample of it.
+
+The following is the list of algorithms I tried with each set--though there were a couple of algorithms that simply don't work with a certain feature sets (such as MultinomialNB, as will not take a negative input value).  
 ```
 LinearSVC
 SVC with RBF
@@ -125,12 +96,57 @@ SGDClassifier
 CalibratedClassifierCV
 
 ```
-I created a function to collect the scores from the algorithm's performance and then later sorted the output and showed the top 3 for that particular feature set.
+I created a function to collect the scores from the algorithm's performance and then later sorted the output and showed the top 3 for that particular feature set on a particular measure--accuracy, F1, and number of false-negatives.
+
+#### Initial Feature Sets
+
+The different feature sets I tried were:
+
+* Non-Text Features Dense
+    * I say dense here because I left continuous variables alone (like body length) and then did one-hot encoding for categorical values. Of all of the tests I ran, this feature set performed the worst but still predicting with over 90% accuracy.
+
+* Non-Text Features Binary
+    * Here I did not leave continuous variables alone and cut them into ranges and then did one-hot encoding for them and the categorical values so all I was left with was a sparse data frame of 1s and 0s. I used a combination of `cut` or `qcut` from pandas to make the ranges. Pandas `qcut` chops continuous data into quartiles, but this doesn't also work well when there are severe outliers or not much range at all. ![python_cut](PROJECT_FILES/IMG/python_cut.png) This performed much more balanced than the dense non-text features, as more algorithms overall scored well with this feature set than the previous dense features.
+
+* Text Features, Cleaned, Lemmatized and No Stop words TFIDF
+    * Going with the traditional sparse matrix that `TFIDFVectorizer` creates, though I elected to use my own cleaning function. In my cleaning function it removed URLs, email addresses, punctuation and numbers. Next, the set was also lemmatized using the `spaCy` library and stop words removed (using the `spaCy` list as well). I chose to use an ngram range of 1-3 for this feature set.
+
+* Text Features, Cleaned, Lemmatized and No Stop words TF Binary
+    * Similar to the set just mentioned, ngrams still set at 1-3, but here I turned off the option of `idf` (or Inverse Document Frequency), `norm` is sent to `None` and set the `binary` option to true. This set just accounts if a word is in the document or not and creates a simple DTM or Document Term Matrix. When I first started trying to fulfill this idea, I neglected to set `norm` to `None`, leaving a default value of `l2` then. Though this still causes binary behavior at one point in the process, the output still remains normalized and similar looking to the previous set. Once I figured out my folly, I then created notebooks that would reference "CompleteBinary" as the set truly and finally was--unfortunately this was one of the things I didn't notice until I was trying to move into Splunk so it is very pervasive. 
+
+* Text Features, Cleaned, Lemmatized and Keep Stop words TFIDF
+    * Similar to the first text set but leaving stop words included and because of this I changed the ngram range to 1-4. This set naturally had a lot of features because of this, but the predictive power did not see any impressive increases, so it did not seem worth leaving in stop words for this problem.
+
+* Text Features, Cleaned, Lemmatized and No Stop words TFIDF, LSA
+    * Finally, also like the first set but then running the final output through the `TruncatedSVD` algorithm to accomplish LSA or Latent Semantic Analysis. LSA is used in attempt to score words by their meaning in context (Landauer, Foltz, & Laham, 1998). This changes the sparse set into a dense one. I would have thought that this set would outperform the other text sets but I was disappointed, possibly an issue here however is that LSA may perform better on a larger set.
+
+#### Combined Features 
+I had trouble finding solid examples of the best way to go about combining text with non-text features. In the end I settled on the concept that in order for it to work, I would either need to make the non-text features sparse, or I would have to make text features dense in order to add them together (stackoverflow.com, 2018). This is so that the dense features do not dominate the sparse features if I were just to combine them as is. I did see and try one idea to have one feature set's prediction be a feature for another set or another idea to have them vote against each other. I moved away from these ideas quickly however because I felt that this would not give them equal footing against each other. Since I was after the concept of modeling this after the mindset that a SOC analyst would take on these emails, I felt it was important for both feature sets to be taken into account so that the whole picture would used to make decision.
+
+* Combined Features Dense
+    * This set is a combination of the first non-text set and the LSA set for text features. In order to get the LSA features to merge with the others, I had to change the LSA features back into a data frame.
+
+* Combined Features Spare/Binary
+    * This set is a combination of the non-text features changed to binary (second non-text set) with the first text set that is a TFIDF. Again the TFIDF is changed back into a data frame in order to combine. This ended up being one of the final two feature sets chosen to work with.
+
+* Combined Features Binary/Binary
+    * The final set of features I chose to work with was likewise a combination of the non-text features changed to binary and the Document Term Matrix binary text set. Like in the previous combination sets the text feature set is changed back into a data frame in order to combine. This was the final of the two feature sets to use.
 
 
-#### Final Trials
-I selected two feature sets and three algorithms to explore further because to their performance and stability against this dataset. I tried multiple trials with each and also did 10-fold cross-validation. 
+#### Hyper-parameter Tuning and Final Trials 
+I selected two feature sets and three algorithms to explore further because to their performance and stability against this dataset. The two feature sets as just mentioned were "Combined Features Spare/Binary" and "Combined Features Binary/Binary". The three algorithms selected were LinearSVC, ExtraTreesClassifier, and MLPClassifier.
 
+I first worked on tuning the hyper-parameters of the algorithms with the feature sets ([found here](https://github.com/geekusa/combined-feature-classifier/tree/master/PYTHON_NOTEBOOKS/HYPERPARAMETER_TUNING))
+
+I tried multiple trials ([found here](https://github.com/geekusa/combined-feature-classifier/tree/master/PYTHON_NOTEBOOKS/FINAL_TRIALS)) with each individually and then finished by making a voting classifier made up of all three. I had intended on doing such which was why I chose both an odd number (so I could have a majority) and why I chose three algorithms that were very different from each other. I then ran 10-fold cross-validation. Looking at their cv results:
+
+_Combined Features Spare/Binary Cross-Validation_
+![sparse_binary_cv](PROJECT_FILES/IMG/sparse_binary_cv.png)
+
+_Combined Features Binary/Binary Cross-Validation_
+![binary_binary_cv](PROJECT_FILES/IMG/binary_binary_cv.png)
+
+So I was left ultimately with two very similar performing algorithms. Since
 
 ## Move to Splunk
 
