@@ -3,6 +3,7 @@
 
 ##### Author: Nathan Worsham
 ##### Created for MSDS692 Data Science Practicum I at Regis University, 2018
+##### [YouTube Presentation](https://www.youtube.com/watch?v=VjLM4uZqhFM)
 
 In the dawn of spam filtering there was a standard juxtaposition of ham versus spam, with "ham" meaning good email and "spam" meaning unwanted email. This categorization however, roles up malicious and junk emails together under the "spam" umbrella. Though it is a different branch of spam email, a more malicious sort that often looks like the real thing is called "phishing" or sometimes "spear phishing" when it is extremely targeted.  Phishing is when an attacker or bad actor (note these are fancy security euphemisms for evil) uses an email message in attempt to trick a user to reveal any sort of information--including a username and password--or to get the user to do an action on the actor’s behalf--like wire them money or send them employee W2s, often with links to a fake website that is masquerading to look like a message that is legitimate (Moramarco, n.d.). Where I work at we use a product called KnowBe4 (https://www.knowbe4.com/) which is primarily used for security awareness training (where we phish our own employees) but it also provides our employees with an option in their email to report something they think is a possibly a phishing email. The problem that happens however, is that often employees don't necessarily understand the difference and will report emails that are simply regular spam emails or emails that the employee is part of a mailing list and not someone trying to scam them.  This causes a lot of noise and requires a security resource to look over the email and decide if it should either be ignored or investigated further.
 
@@ -136,9 +137,13 @@ I had trouble finding solid examples of the best way to go about combining text 
 #### Hyper-parameter Tuning and Final Trials 
 I selected two feature sets and three algorithms to explore further because to their performance and stability against this dataset. The two feature sets as just mentioned were "Combined Features Spare/Binary" and "Combined Features Binary/Binary". The three algorithms selected were LinearSVC, ExtraTreesClassifier, and MLPClassifier.
 
-I first worked on tuning the hyper-parameters of the algorithms with the feature sets ([found here](https://github.com/geekusa/combined-feature-classifier/tree/master/PYTHON_NOTEBOOKS/HYPERPARAMETER_TUNING))
+I first worked on tuning the hyper-parameters of the algorithms with the feature sets ([found here](https://github.com/geekusa/combined-feature-classifier/tree/master/PYTHON_NOTEBOOKS/HYPERPARAMETER_TUNING)) using GridSearchCV. Here I ran into two different problems both around the problem of grid search completely hangning. However each issue was different. 
 
-I tried multiple trials ([found here](https://github.com/geekusa/combined-feature-classifier/tree/master/PYTHON_NOTEBOOKS/FINAL_TRIALS)) with each individually and then finished by making a voting classifier made up of all three. I had intended on doing such which was why I chose both an odd number (so I could have a majority) and why I chose three algorithms that were very different from each other. I then ran 10-fold cross-validation. Looking at their cv results:
+The first issue was with LinearSVC, I could make heads or tails out of it because the algorithm itself completed in seconds. After some digging I was able to find a [Github issue](https://github.com/scikit-learn/scikit-learn/issues/8918) that stated that `return_train_score` is by default set to True and could cause this. Changing this to False fixed the problem and sure enough the documentation talks about performance of the command with plans to change its default in the future. 
+
+The second issue was with MLPClassifier with the same behaviour but I already had set `return_train_score=False`. Digging again, after a combination of turning on debugging on gridsearch and the algorithm and this [Github issue](https://github.com/scikit-learn/scikit-learn/issues/5115) tipping me off, I found that the problem was with multi-threading. After setting `n_jobs` to 1, I could finally get GridSearchCV to complete.
+
+Now that I had tuned hyper-parameters, I tried multiple trials with each algorith individually and the VotingClassifier made up of the tuned algorithms([found here](https://github.com/geekusa/combined-feature-classifier/tree/master/PYTHON_NOTEBOOKS/FINAL_TRIALS)). I then finished by making a voting classifier made up of all three and running cross-validation on it. I had intended on doing such really in the first place, which was why I chose both an odd number of algorithms (so I could have a majority) and why I chose three algorithms that were very different from each other. I then ran 10-fold cross-validation. Looking at their cv results:
 
 _Combined Features Spare/Binary Cross-Validation_
 ![sparse_binary_cv](PROJECT_FILES/IMG/sparse_binary_cv.png)
@@ -146,11 +151,29 @@ _Combined Features Spare/Binary Cross-Validation_
 _Combined Features Binary/Binary Cross-Validation_
 ![binary_binary_cv](PROJECT_FILES/IMG/binary_binary_cv.png)
 
-So I was left ultimately with two very similar performing algorithms. Since
+So I was left ultimately with two very similar performing algorithms. Since I was using a tree classifier however, this allowed me to be able to get the `feature_importances_` for each feature set.
+
+_Combined Features Spare/Binary Feature Importances_
+![full_sparse_binary_features](PROJECT_FILES/IMG/full_sparse_binary_features.png)
+
+_Combined Features Binary/Binary Feature Importances_
+![full_binary_binary_features](PROJECT_FILES/IMG/full_binary_binary_features.png)
+
+The important issue I found here was that the binary/binary model was taking into account much more terms in its top feature importances than the sparse/binary set--specifically 10 vs 1. This was the behavior I was after in a model--which I have mentioned multiple times--one that would give equal significance to both set of features.
+
+Furthermore I had one other reason to select the binary/binary set. In security, we are often more concerned with false-negative performance than with false-positive performance. Granted false-positives lead to alert fatigue but a false-negative in this case would be that the algorithm classified an _investigate_ email as an _ignore_ class--meaning that we would not see these at all. Looking at the false-negative performance using a confusion matrix:
+
+_Combined Features Spare/Binary Confusion Matrix_
+![sparse_binary_cm](PROJECT_FILES/IMG/sparse_binary_cm.png)
+
+_Combined Features Binary/Binary Confusion Matrix_
+![binary_binary_cm](PROJECT_FILES/IMG/binary_binary_cm.png)
+
+Here we see that the binary/binary feature set has better false-negative performance--one less. Taking these two reasons into account, I now had a clear winner in my mind, the combined binary/binary feature set.
 
 ## Move to Splunk
 
-Now that I had the model (or rather models) I wanted to use, the final portion of the project was that I wanted to see if I could get the same algorithms working in Splunk.
+Now that I had the model (or rather models since we are talking about voting) I wanted to use, the final portion of the project was that I wanted to see if I could get the same algorithms working in Splunk. Recently, Splunk upgraded both their underlying scientific Python app and MLTK app, this worked out in my favor as this was the only way I was going to be able to use the MLPClassifier which had a dependency on the version of sklearn. Though now that Splunk's MLTK had MLPClassifier built-in it still did not have several algorithms I needed to complete the move. Fortunately 
 
 ## Conclusion
 
