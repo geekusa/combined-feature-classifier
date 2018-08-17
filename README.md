@@ -28,34 +28,42 @@ It re-writes the email. Replaces the MIME boundary with human readable text, reo
 During one of the several runs of deleting the indexed data, re-clean it, and reindex it, I decided to take a look at what I had been seeing all throughout the emails, mainly “=20” and “=3D”. I learned that these are called quoted printables in MIME formats and used a library to remove them called “quopri” (stackoverflow.com, 2008). Eventually, I realized in every email where the text portion is, it clearly states “Content-Transfer-Encoding: Quoted-printable” which is the hint that they all do this, or a hint that I am not an email expert.
 
 ## Data Exploration
-In the last practicum as mentioned prior, I built a Splunk app called [NLP Text Analytics](https://splunkbase.splunk.com/app/4066/), and here I used a portion of this app--specifically the _Counts_ dashboard to look at the textual features of the set.
+In the last practicum as mentioned prior, I built a Splunk app called [NLP Text Analytics](https://splunkbase.splunk.com/app/4066/), and here I used a portion of that app--specifically the _Counts_ dashboard to look at the textual features of the set.
+
+_Complete Set (Under-Sampled Majority) Term Counts_
 ![both_targets_counts](PROJECT_FILES/IMG/both_targets_counts.png)
 
-The set is heavily dominated by the ignore category and will need to be dealt with in the machine learning phase. The top terms for ignore are nearly identical to the top terms of the set.
-![ignore_top_terms](PROJECT_FILES/IMG/ignore_top_terms.png)
+The set is heavily dominated by the ignore category which is why it is under-sampled here so that investigate emails would not be flooded out. The top terms for ignore are nearly identical to the top terms of the set, which has to do with the discrepancy in the amount of terms per category.
 
-However it is interesting to see the different top terms for each category. While the _ignore_ category seems to be dominated by advertising, we can see some of the suspicious nature for the _investigate_ category by it's top terms like "invoice", "payment", "send" and possibly "number".
+However it is interesting to see the different top terms for each category. The ignore category seems to be dominated by marketing emails, something which was very common to find in the ignore set. The words "unsubscribe" and "receive" look like they are doing their CAN-SPAM ACT due diligence. Looking at investigate emails, we can see some of the suspicious nature for the investigate category by it's top terms like "invoice", "payment", "send" and possibly "number". 
 ![investigate_top_terms](PROJECT_FILES/IMG/investigate_top_terms.png)
 
-Looking at just _investigate_'s counts we see the average length of the email--Average Terms Per text_plain--have gone way down, suggesting that suspicious emails tend to be shorter. Later, I ended up under-sampling the majority class and then the average terms for _ignore_ actually increase while the unique term count cuts down by about 2/3rds.  The ngrams definitely show a behavior of trying to coax the user into doing something, though the terms "let know" and "please click" were heavy in the whole set as well, suggesting that it is common language to find in these type of emails. 
+Looking at just investigate's counts we see the average length of the email--Average Terms Per mail_text--have gone way down, suggesting that suspicious emails tend to be shorter. The average for ignore on its own is around 129.  
+
+_Investigate Counts_
 ![investigate_counts](PROJECT_FILES/IMG/investigate_counts.png)
 
-Next I moved onto exploring the data features that were not text. Here is where a SOC analyst may spend a decent amount of time, under the hood of the email able to see the secrets it is hiding. Changing these into numeric features often resulted in the length of something, quantity of something occurring (along with the unique quantity of something occurring) and whether or not an email has some feature or not. I started at this point to under-sample the ignore category so that investigate emails would not be flooded out.
+The ngrams for investigate bring out a different tactic. While it still definitely shows a relationship with money with one of the top ngrams being "past due". But we see a heavy amount of package delivery themed emails standing out--another favorite technique of phishing.
+
+_Investigate Ngram Word Cloud_
+![investigate_counts](PROJECT_FILES/IMG/investigate_wc.png) 
+
+Next I moved onto exploring the data features that were not text. Here is where a SOC analyst may spend a decent amount of time, under the hood of the email able to see the secrets it is hiding. Changing these into numeric features often resulted in the length of something, quantity of something occurring (along with the unique quantity of something occurring) and whether or not an email has some feature or not. 
 
 One feature that immediately stood out to me and was a bit surprising at first was the length of the body from the email. 
 ![body_subject_len](PROJECT_FILES/IMG/body_subject_len.png)
 
 Ignore emails body length where more often substantially longer than investigate emails and a great indicator of class. In fact the inner quartile ranges of the two classes' body lengths did not overlap either. Stopping to think about this it seems to be the human element at play here. It would seem that more often than not those behind doing something nefarious with email tend to go the easier route and write shorter emails in order to get a user to do something, whereas an ignore email which often is a marketing email, is filled to the brim with html formatting to make their emails try to stand out as much as possible. This professional html formatting really pushes the length of the email. Subject length here also shows a similar case but not nearly as such a clear divider.
 
-Another interesting though not really surprising find is that investigate emails are more likely to have an attachment. This visualization is in percentage (like a pie chart--the black sheep of statistical visualizations).
+Another interesting though not really surprising find, is that investigate emails are more likely to have an attachment. This visualization is in percentage (like a pie chart--the black sheep of statistical visualizations).
 ![attach_percent](PROJECT_FILES/IMG/attach_percent.png)
 
-Unsurprising because often to accomplish an attack requires a user to execute code, though this can be done with a link, which then downloads and executes the code as well this is a good'ol standby.
+Unsurprising, because often to accomplish an attack requires a user to execute code, though this can be done with a link, which then downloads and executes the code as well this is a good'ol standby.
 
-TLD which stands for Top Level Domain, in this case is the domain that the from address is using. Looking further into this aspect, the TLD is heavily dominated by ".com" but using a different domain is a common way to spoof or masquerade as an official address. Though when seeing this visually can comparing the two classes, we see that ignore emails are likely to have come from a `.com` address, whereas investigate emails may come from a much larger variety of TLDs.
+TLD which stands for Top Level Domain, in this case is the domain that the from address is using. Looking further into this aspect, the TLD is heavily dominated by ".com" but using a different domain is a common way to spoof or masquerade as an official address. Though when seeing this visually and comparing the two classes, we see that ignore emails are likely to have come from a `.com` address, whereas investigate emails may come from a much larger variety of TLDs.
 ![treemap_small](PROJECT_FILES/IMG/treemap_small.png)
 
-Though what is also interesting here is that `.net` and `.org` swap places of importance between the two categories and `.net` in general, has greater prominence in the _investigate_ emails.
+Though what is also interesting here is that `.net` and `.org` swap places of importance between the two categories and `.net` in general, has greater prominence in the investigate emails.
 
 ## Problems Encountered 
 
@@ -160,7 +168,7 @@ _Combined Features Binary/Binary Feature Importances_
 
 The important issue I found here was that the binary/binary model was taking into account much more terms in its top feature importances than the sparse/binary set--specifically 10 vs 1. This was the behavior I was after in a model--which I have mentioned multiple times--one that would give equal significance to both set of features.
 
-Furthermore, I had one other reason to select the binary/binary set. In security, in many cases there is more concern with false-negative performance than with false-positive performance. Granted false-positives lead to alert fatigue, something no one likes and the basis for a whole other conversation, but a false-negative in this case would be one where the algorithm classified an _investigate_ email incorrectly as an _ignore_ email--meaning that we would not be alerted at all. Looking at the false-negative performance of the two feature sets using a confusion matrix:
+Furthermore, I had one other reason to select the binary/binary set. In security, in many cases there is more concern with false-negative performance than with false-positive performance. Granted false-positives lead to alert fatigue, something no one likes and the basis for a whole other conversation, but a false-negative in this case would be one where the algorithm classified an investigate email incorrectly as an ignore email--meaning that we would not be alerted at all. Looking at the false-negative performance of the two feature sets using a confusion matrix:
 
 _Combined Features Spare/Binary Confusion Matrix_
 ![sparse_binary_cm](PROJECT_FILES/IMG/sparse_binary_cm.png)
@@ -176,13 +184,13 @@ Now that I had the model (or rather models since we are talking about voting) I 
 
 I added the algorithms LinearSVC, ExtraTreesClassifier, and MinMaxScaler. The last algorithm I needed already existed in Splunk's MLTK which was TfidfVectorizer, but as of version 3.4, it was missing two options that would allow a binary output. Because of this I added a customized version of TfidfVectorizer, called TFBinary, that allowed and set as defaults these options to force binary output.
 
-I then provided the Splunk algorithms the same tuned hyperparamters that I gave Python.
+I then provided the Splunk algorithms the same tuned hyper-parameters that I gave Python.
 ![splunk_fit](PROJECT_FILES/IMG/splunk_fit.png)
 
-I also tried adding the `VotingClassifier` algorithm, however this algorithm takes as arguments is other algorithms. I tried various ways (syntax) of trying to do this, but gave up and chalking it up to the fact that Splunk's MLTK's API does specific formatting to arguments provided to options and currently is not possible. Though probably also a reason I was quick to give up was that I knew I could just implement a hard vote (meaning majority wins) using a Splunk `eval` statement (VotingClassifier also offers a "soft" voting option).
+I also tried adding the `VotingClassifier` algorithm, however this algorithm takes other algorithms as arguments. I tried various ways (syntax) of trying to get it to work, but gave up and chalking it up to the fact that Splunk's MLTK's API does specific formatting to arguments provided and currently is simply not possible. Though another reason I was quick to give up was that I knew I could just implement a simple hard vote (meaning majority wins) using a Splunk `eval` statement (VotingClassifier also offers a "soft" voting option).
 ![vote](PROJECT_FILES/IMG/vote.png)
 
-One unsettling thing did happen, which was after doing my 80/20 split in Splunk, training my models, and then pitting them against the 20 percent test set, it kept doing perfect predictions.
+One unsettling result that happened was after doing my 80/20 split in Splunk, training my models, and then pitting them against the 20 percent test set, it kept doing perfect predictions on the 20 percent test set.
 ![splunk_perfect](PROJECT_FILES/IMG/splunk_perfect.png)
 
 I repeated this exercise several times with different seeds and still received the same results. Though I am not 100% sure what is going on here, one thing I do know is that MLTK is really an abstraction layer to Python, therefore there are going to be some changes and settings going on under the hood that do not exactly match what I was doing in my notebooks. 
@@ -190,18 +198,18 @@ I repeated this exercise several times with different seeds and still received t
 However, as a sanity check, I took 400 of the ignore emails that the models had not seen--since I had a large stash of those lying around. 
 ![splunk_ignore_unseen](PROJECT_FILES/IMG/splunk_ignore_unseen.png)
 
-Seeing these results, the performance was much more in line with what I would expect. Of course the incorrect classifications in this case would be false-positives but as that was all I had I took it as a sign I was on the right course. 
+Seeing these results, the performance was much more in-line with what I would expect. Of course the incorrect classifications in this case would be false-positives but as that was all I had, I took it as a sign I was on the right course. 
 
-It was interesting doing a comparison of how the Python workflow compared to that of Splunk. They contain essentially the same steps, but the order moves around a bit. Just in Splunk all of the steps become a single search.
+It was interesting doing a comparison of how the Python workflow compared to that of Splunk. They contain essentially the same steps, but the order of operations moves around a bit. In Splunk though, all of the steps become a single search.
 
 ## Conclusion
 
-I found that combining text and non-text features would provide a better overall model with this data set. In this way, modeling itself after the workflow of a SOC analyst, taking into account all aspects of an email in question. I was pleased with the performance of using machine learning against this problem, with over 90% accuracy and good false-negative response, I feel like it can start providing a benefit right away in production. I was equally pleased with the experience of moving the models into Splunk. As mentioned, I can then take advantage of Splunk's pipeline and sharing the "search" with others who are not familiar with Machine Learning or even Python might be more inclined to understand what is going on.
+I found that combining text and non-text features provided a better overall model with this data set. Modeled itself after the workflow of a SOC analyst, taking into account all aspects of an email in question. I was pleased with the performance of using machine learning against this problem, with over 90% accuracy and good false-negative response. I feel like this model can start providing a benefit right away in production. I was equally pleased with the experience of moving the models into Splunk. As mentioned, I can then take advantage of Splunk's pipeline and sharing the "search" with others who are not familiar with Machine Learning or even Python might be more inclined to understand what is going on or at least peak their interest.
 
 ## Future Work
-As more data comes in over time I will want to continue to improve the model and provide a way for our SOC to continue to train the model. This could probably be accomplished by appending to a lookup a source that say was classified incorrectly--maybe a Splunk "workflow action" will be the way to go. 
+As more data comes in over time, I will want to continue to improve the model and provide a way for our SOC to keep on training the model. This could probably be accomplished by appending to a lookup the data source that for example was classified incorrectly--maybe a Splunk "workflow action" will be the way to go. 
 
-I feel there is room to bring in further features into the model. I did not deal with multi-valued fields in this iteration as the SA-mailparser_plus app I created for example will return a multivalued field with all of the URL lengths. Though more features don't necessarily mean a better model, but in this case I think it could help add to the totality of lenses with which to look through at the emails.
+I feel there is room to bring in further features into the model. I did not deal with multi-valued fields in this iteration as the [SA-mailparser_plus](https://splunkbase.splunk.com/app/4129/) app I created as an example will return a multivalued field with all of the URL lengths. Though more features don't necessarily mean a better model, but in this case I think it could help add to the totality of lenses with which to look through at the emails.
 
 ## References
 See https://github.com/geekusa/combined-feature-classifier/blob/master/PROJECT_FILES/References.md for the list of references for this paper and project.
