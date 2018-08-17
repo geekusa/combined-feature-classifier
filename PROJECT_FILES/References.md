@@ -40,6 +40,8 @@ scikit-learn developers. (2015). GridSearchCV freezes indefinitely with multithr
 scikit-learn developers. (2017). why gridsearchCV becomes much slower when migrating into model_selection? · Issue #8918 · scikit-learn/scikit-learn. Retrieved from https://github.com/scikit-learn/scikit-learn/issues/8918
 
 
+scikit-learn developers. (2017). sklearn.model_selection.GridSearchCV — scikit-learn 0.19.2 documentation. Retrieved from http://scikit-learn.org/stable/modules/generated/sklearn.model_selection.GridSearchCV.html
+
 Splunk. (2018). Add an algorithm - Splunk Documentation. Retrieved from https://docs.splunk.com/Documentation/MLApp/3.2.0/API/Overview
 
 stackoverflow.com. (2010). email - Getting mail attachment to python file object. Retrieved from https://stackoverflow.com/a/4114952
