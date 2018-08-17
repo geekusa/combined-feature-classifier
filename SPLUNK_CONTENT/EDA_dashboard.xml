@@ -1,0 +1,486 @@
+<form>
+  <label>Ignore/Investigate Email Classification EDA</label>
+  <search id="base_search">
+    <query>index=mail_secured sourcetype=mail_offline NOT [| inputlookup emailSimilars.csv | format]
+| table _raw _time source date*
+| eval target = case(like(source,"/home/splunk/knowbe4/ignore/%"),"ignore", like(source,"/home/splunk/knowbe4/investigate/%"),"investigate",true(),null())
+| mailparser all_headers=t adv_attrs=t 
+| table _time date_hour date_wday target X-USANET-TAP-Score X-BAEAI-* *_len from_tld X-Priority  has* num* uniq* url* link* emails attach* mail_text
+| search date_hour=* 
+</query>
+    <earliest>$time.earliest$</earliest>
+    <latest>$time.latest$</latest>
+    <sampleRatio>1</sampleRatio>
+  </search>
+  <search base="base_search" id="sub_search">
+    <query>
+| search target=$target$
+| sample count=$downsample$ by target
+    </query>
+  </search>
+  <fieldset submitButton="true" autoRun="false">
+    <input type="time" token="time">
+      <label></label>
+      <default>
+        <earliest>-90d@d</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="dropdown" token="target">
+      <label>Target</label>
+      <choice value="*">Both</choice>
+      <choice value="ignore">Ignore</choice>
+      <choice value="investigate">Investigate</choice>
+      <default>*</default>
+      <initialValue>*</initialValue>
+    </input>
+    <input type="text" token="downsample">
+      <label>Downsample Ignore Target</label>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <viz type="status_indicator_app.status_indicator">
+        <title>Total Ignore Samples</title>
+        <search base="sub_search">
+          <query>| where target=="ignore"
+| stats count</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">75</option>
+        <option name="status_indicator_app.status_indicator.colorBy">static_color</option>
+        <option name="status_indicator_app.status_indicator.fillTarget">background</option>
+        <option name="status_indicator_app.status_indicator.fixIcon">times-circle</option>
+        <option name="status_indicator_app.status_indicator.icon">fix_icon</option>
+        <option name="status_indicator_app.status_indicator.precision">0</option>
+        <option name="status_indicator_app.status_indicator.showOption">1</option>
+        <option name="status_indicator_app.status_indicator.staticColor">#555</option>
+        <option name="status_indicator_app.status_indicator.useColors">true</option>
+        <option name="status_indicator_app.status_indicator.useThousandSeparator">true</option>
+      </viz>
+    </panel>
+    <panel>
+      <viz type="status_indicator_app.status_indicator">
+        <title>Total Investigate Samples</title>
+        <search base="sub_search">
+          <query>| where target=="investigate"
+| stats count</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">75</option>
+        <option name="status_indicator_app.status_indicator.colorBy">static_color</option>
+        <option name="status_indicator_app.status_indicator.fillTarget">background</option>
+        <option name="status_indicator_app.status_indicator.fixIcon">search</option>
+        <option name="status_indicator_app.status_indicator.icon">fix_icon</option>
+        <option name="status_indicator_app.status_indicator.precision">0</option>
+        <option name="status_indicator_app.status_indicator.showOption">1</option>
+        <option name="status_indicator_app.status_indicator.staticColor">#dc4e41</option>
+        <option name="status_indicator_app.status_indicator.useColors">true</option>
+        <option name="status_indicator_app.status_indicator.useThousandSeparator">true</option>
+      </viz>
+    </panel>
+    <panel>
+      <viz type="status_indicator_app.status_indicator">
+        <title>Total Ignore Attachments</title>
+        <search base="sub_search">
+          <query>| where target=="ignore"
+| stats count by attachment_filename
+| stats sum(count)
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">75</option>
+        <option name="status_indicator_app.status_indicator.colorBy">static_color</option>
+        <option name="status_indicator_app.status_indicator.fillTarget">background</option>
+        <option name="status_indicator_app.status_indicator.fixIcon">times-circle</option>
+        <option name="status_indicator_app.status_indicator.icon">fix_icon</option>
+        <option name="status_indicator_app.status_indicator.precision">0</option>
+        <option name="status_indicator_app.status_indicator.showOption">1</option>
+        <option name="status_indicator_app.status_indicator.staticColor">#555</option>
+        <option name="status_indicator_app.status_indicator.useColors">true</option>
+        <option name="status_indicator_app.status_indicator.useThousandSeparator">true</option>
+      </viz>
+    </panel>
+    <panel>
+      <viz type="status_indicator_app.status_indicator">
+        <title>Total Investigate Attachments</title>
+        <search base="sub_search">
+          <query>| where target=="investigate"
+| stats count by attachment_filename
+| stats sum(count)
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">75</option>
+        <option name="status_indicator_app.status_indicator.colorBy">static_color</option>
+        <option name="status_indicator_app.status_indicator.fillTarget">background</option>
+        <option name="status_indicator_app.status_indicator.fixIcon">search</option>
+        <option name="status_indicator_app.status_indicator.icon">fix_icon</option>
+        <option name="status_indicator_app.status_indicator.precision">0</option>
+        <option name="status_indicator_app.status_indicator.showOption">1</option>
+        <option name="status_indicator_app.status_indicator.staticColor">#dc4e41</option>
+        <option name="status_indicator_app.status_indicator.useColors">true</option>
+        <option name="status_indicator_app.status_indicator.useThousandSeparator">true</option>
+      </viz>
+    </panel>
+    <panel>
+      <viz type="status_indicator_app.status_indicator">
+        <title>Unique Ignore TLD Seen</title>
+        <search base="sub_search">
+          <query>| where target=="ignore"
+| stats dc(from_tld)
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">75</option>
+        <option name="status_indicator_app.status_indicator.colorBy">static_color</option>
+        <option name="status_indicator_app.status_indicator.fillTarget">background</option>
+        <option name="status_indicator_app.status_indicator.fixIcon">times-circle</option>
+        <option name="status_indicator_app.status_indicator.icon">fix_icon</option>
+        <option name="status_indicator_app.status_indicator.precision">0</option>
+        <option name="status_indicator_app.status_indicator.showOption">1</option>
+        <option name="status_indicator_app.status_indicator.staticColor">#555</option>
+        <option name="status_indicator_app.status_indicator.useColors">true</option>
+        <option name="status_indicator_app.status_indicator.useThousandSeparator">true</option>
+      </viz>
+    </panel>
+    <panel>
+      <viz type="status_indicator_app.status_indicator">
+        <title>Unique Investigate TLD Seen</title>
+        <search base="sub_search">
+          <query>| where target=="investigate"
+| stats dc(from_tld)
+          </query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">75</option>
+        <option name="status_indicator_app.status_indicator.colorBy">static_color</option>
+        <option name="status_indicator_app.status_indicator.fillTarget">background</option>
+        <option name="status_indicator_app.status_indicator.fixIcon">search</option>
+        <option name="status_indicator_app.status_indicator.icon">fix_icon</option>
+        <option name="status_indicator_app.status_indicator.precision">0</option>
+        <option name="status_indicator_app.status_indicator.showOption">1</option>
+        <option name="status_indicator_app.status_indicator.staticColor">#dc4e41</option>
+        <option name="status_indicator_app.status_indicator.useColors">true</option>
+        <option name="status_indicator_app.status_indicator.useThousandSeparator">true</option>
+      </viz>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <viz type="status_indicator_app.status_indicator">
+        <title>Avg# Ignore Links</title>
+        <search base="sub_search">
+          <query>| where target=="ignore"
+| stats avg(num_link)</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">75</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="status_indicator_app.status_indicator.colorBy">static_color</option>
+        <option name="status_indicator_app.status_indicator.fillTarget">background</option>
+        <option name="status_indicator_app.status_indicator.fixIcon">times-circle</option>
+        <option name="status_indicator_app.status_indicator.icon">fix_icon</option>
+        <option name="status_indicator_app.status_indicator.precision">0</option>
+        <option name="status_indicator_app.status_indicator.showOption">1</option>
+        <option name="status_indicator_app.status_indicator.staticColor">#555</option>
+        <option name="status_indicator_app.status_indicator.useColors">true</option>
+        <option name="status_indicator_app.status_indicator.useThousandSeparator">true</option>
+      </viz>
+    </panel>
+    <panel>
+      <viz type="status_indicator_app.status_indicator">
+        <title>Avg# Investigate Links</title>
+        <search base="sub_search">
+          <query>| where target=="investigate"
+| stats avg(num_link)</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">75</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="status_indicator_app.status_indicator.colorBy">static_color</option>
+        <option name="status_indicator_app.status_indicator.fillTarget">background</option>
+        <option name="status_indicator_app.status_indicator.fixIcon">search</option>
+        <option name="status_indicator_app.status_indicator.icon">fix_icon</option>
+        <option name="status_indicator_app.status_indicator.precision">0</option>
+        <option name="status_indicator_app.status_indicator.showOption">1</option>
+        <option name="status_indicator_app.status_indicator.staticColor">#dc4e41</option>
+        <option name="status_indicator_app.status_indicator.useColors">true</option>
+        <option name="status_indicator_app.status_indicator.useThousandSeparator">true</option>
+      </viz>
+    </panel>
+    <panel>
+      <viz type="status_indicator_app.status_indicator">
+        <title>Avg# Ignore Email Links</title>
+        <search base="sub_search">
+          <query>| where target=="ignore"
+| stats avg(num_email_link)</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">75</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="status_indicator_app.status_indicator.colorBy">static_color</option>
+        <option name="status_indicator_app.status_indicator.fillTarget">background</option>
+        <option name="status_indicator_app.status_indicator.fixIcon">times-circle</option>
+        <option name="status_indicator_app.status_indicator.icon">fix_icon</option>
+        <option name="status_indicator_app.status_indicator.precision">0</option>
+        <option name="status_indicator_app.status_indicator.showOption">1</option>
+        <option name="status_indicator_app.status_indicator.staticColor">#555</option>
+        <option name="status_indicator_app.status_indicator.useColors">true</option>
+        <option name="status_indicator_app.status_indicator.useThousandSeparator">true</option>
+      </viz>
+    </panel>
+    <panel>
+      <viz type="status_indicator_app.status_indicator">
+        <title>Avg# Investigate Email Links</title>
+        <search base="sub_search">
+          <query>| where target=="investigate"
+| stats avg(num_email_link)</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">75</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="status_indicator_app.status_indicator.colorBy">static_color</option>
+        <option name="status_indicator_app.status_indicator.fillTarget">background</option>
+        <option name="status_indicator_app.status_indicator.fixIcon">search</option>
+        <option name="status_indicator_app.status_indicator.icon">fix_icon</option>
+        <option name="status_indicator_app.status_indicator.precision">0</option>
+        <option name="status_indicator_app.status_indicator.showOption">1</option>
+        <option name="status_indicator_app.status_indicator.staticColor">#dc4e41</option>
+        <option name="status_indicator_app.status_indicator.useColors">true</option>
+        <option name="status_indicator_app.status_indicator.useThousandSeparator">true</option>
+      </viz>
+    </panel>
+    <panel>
+      <viz type="status_indicator_app.status_indicator">
+        <title>Total Ignore Masquerade Links</title>
+        <search base="sub_search">
+          <query>| where target=="ignore"
+| stats sum(num_masq_link)</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">75</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="status_indicator_app.status_indicator.colorBy">static_color</option>
+        <option name="status_indicator_app.status_indicator.fillTarget">background</option>
+        <option name="status_indicator_app.status_indicator.fixIcon">times-circle</option>
+        <option name="status_indicator_app.status_indicator.icon">fix_icon</option>
+        <option name="status_indicator_app.status_indicator.precision">0</option>
+        <option name="status_indicator_app.status_indicator.showOption">1</option>
+        <option name="status_indicator_app.status_indicator.staticColor">#555</option>
+        <option name="status_indicator_app.status_indicator.useColors">true</option>
+        <option name="status_indicator_app.status_indicator.useThousandSeparator">true</option>
+      </viz>
+    </panel>
+    <panel>
+      <viz type="status_indicator_app.status_indicator">
+        <title>Total Invest Masquerade Links</title>
+        <search base="sub_search">
+          <query>| where target=="investigate"
+| stats sum(num_masq_link)</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">75</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="status_indicator_app.status_indicator.colorBy">static_color</option>
+        <option name="status_indicator_app.status_indicator.fillTarget">background</option>
+        <option name="status_indicator_app.status_indicator.fixIcon">search</option>
+        <option name="status_indicator_app.status_indicator.icon">fix_icon</option>
+        <option name="status_indicator_app.status_indicator.precision">0</option>
+        <option name="status_indicator_app.status_indicator.showOption">1</option>
+        <option name="status_indicator_app.status_indicator.staticColor">#dc4e41</option>
+        <option name="status_indicator_app.status_indicator.useColors">true</option>
+        <option name="status_indicator_app.status_indicator.useThousandSeparator">true</option>
+      </viz>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <viz type="viz_boxplot_app.boxplot">
+        <title>Box Plot Body Length</title>
+        <search base="sub_search">
+          <query>| stats median(body_len) AS median, min(body_len) AS min, max(body_len) AS max, p25(body_len) AS lowerquartile, p75(body_len) AS upperquartile by target
+| fields - count 
+| where isnotnull(median) 
+| eval iqr=upperquartile-lowerquartile 
+| eval lowerwhisker=median-(1.5*iqr) 
+| eval lowerwhisker = if(lowerwhisker&lt;0,0,lowerwhisker)
+| eval upperwhisker=median+(1.5*iqr)</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">450</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>
+      <chart>
+        <title>Avg Body Length</title>
+        <search base="sub_search">
+          <query>| stats avg(body_len) AS avgBodyLen BY target</query>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">none</option>
+      </chart>
+    </panel>
+    <panel>
+      <viz type="viz_boxplot_app.boxplot">
+        <title>Box Plot Subject Length</title>
+        <search base="sub_search">
+          <query>| stats median(subject_len) AS median, min(subject_len) AS min, max(subject_len) AS max, p25(subject_len) AS lowerquartile, p75(subject_len) AS upperquartile by target
+| fields - count 
+| where isnotnull(median) 
+| eval iqr=upperquartile-lowerquartile 
+| eval lowerwhisker=median-(1.5*iqr) 
+| eval lowerwhisker = if(lowerwhisker&lt;0,0,lowerwhisker)
+| eval upperwhisker=median+(1.5*iqr)</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">450</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>
+      <chart>
+        <title>Avg Subject Length</title>
+        <search base="sub_search">
+          <query>| stats avg(subject_len) AS avgSubjectLen BY target</query>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">none</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Count by Hour of the Day</title>
+      <chart>
+        <search base="sub_search">
+          <query>| stats count by target date_hour
+| xyseries date_hour target count
+| sort date_hour</query>
+        </search>
+        <option name="charting.axisTitleX.text">Hour of the Day</option>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.text">Hour of the Day</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">default</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Count by Day of the Week</title>
+      <chart>
+        <search base="sub_search">
+          <query>| chart count over date_wday by target
+| eval date_wday = case(
+    date_wday=="sunday", "      Sunday",
+    date_wday=="monday", "     Monday",
+    date_wday=="tuesday", "    Tuesday",
+    date_wday=="wednesday", "   Wednesday",
+    date_wday=="thursday", "  Thursday",
+    date_wday=="friday", " Friday",
+    date_wday=="saturday", "Saturday",
+    true(),date_wday
+)
+| sort date_wday</query>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.chart">column</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <chart>
+        <title>Attachment Content-type Percentage</title>
+        <search base="sub_search">
+          <query>| eval attachment_content_type = case(attachment_content_type=="image/jpeg","image/jpg",true(),attachment_content_type)
+| chart count OVER target BY attachment_content_type
+| rename NULL AS no_attach</query>
+        </search>
+        <option name="charting.axisTitleX.visibility">collapsed</option>
+        <option name="charting.axisTitleY.visibility">collapsed</option>
+        <option name="charting.chart">bar</option>
+        <option name="charting.chart.stackMode">stacked100</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.legend.placement">top</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <viz type="aplura_viz_scatterplot_matrix.scatterplot_matrix">
+        <title>Attachment Content-type Percentage</title>
+        <search base="sub_search">
+          <query>| table target num_link num_email_link num_masq_link
+| where num_link &gt; 0
+| sort num_link</query>
+        </search>
+        <option name="aplura_viz_scatterplot_matrix.scatterplot_matrix.box_size">220</option>
+        <option name="aplura_viz_scatterplot_matrix.scatterplot_matrix.cell_padding">10</option>
+        <option name="aplura_viz_scatterplot_matrix.scatterplot_matrix.dot_radius">4</option>
+        <option name="aplura_viz_scatterplot_matrix.scatterplot_matrix.height">1200</option>
+        <option name="aplura_viz_scatterplot_matrix.scatterplot_matrix.legend_position">right</option>
+        <option name="aplura_viz_scatterplot_matrix.scatterplot_matrix.show_r">false</option>
+        <option name="aplura_viz_scatterplot_matrix.scatterplot_matrix.show_trend">true</option>
+        <option name="aplura_viz_scatterplot_matrix.scatterplot_matrix.width">1024</option>
+        <option name="drilldown">none</option>
+        <option name="height">800</option>
+        <option name="refresh.display">progressbar</option>
+      </viz>
+    </panel>
+    <panel>
+      <viz type="treemap_app.treemap">
+        <title>From TLD by Investigate</title>
+        <search base="sub_search">
+          <query>| where target=="investigate"
+| stats count BY from_tld target
+| sort -count</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">375</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="treemap_app.treemap.colorMode">categorical</option>
+        <option name="treemap_app.treemap.maxCategories">100</option>
+        <option name="treemap_app.treemap.maxColor">#3fc77a</option>
+        <option name="treemap_app.treemap.minColor">#d93f3c</option>
+        <option name="treemap_app.treemap.numOfBins">6</option>
+        <option name="treemap_app.treemap.showLabels">true</option>
+        <option name="treemap_app.treemap.showLegend">true</option>
+        <option name="treemap_app.treemap.showTooltip">true</option>
+        <option name="treemap_app.treemap.useColors">true</option>
+        <option name="treemap_app.treemap.useZoom">true</option>
+      </viz>
+      <viz type="treemap_app.treemap">
+        <title>From TLD by Ignore</title>
+        <search base="sub_search">
+          <query>| where target=="ignore"
+| stats count BY from_tld target
+| sort -count</query>
+        </search>
+        <option name="drilldown">none</option>
+        <option name="height">375</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="treemap_app.treemap.colorMode">categorical</option>
+        <option name="treemap_app.treemap.maxCategories">100</option>
+        <option name="treemap_app.treemap.maxColor">#3fc77a</option>
+        <option name="treemap_app.treemap.minColor">#d93f3c</option>
+        <option name="treemap_app.treemap.numOfBins">6</option>
+        <option name="treemap_app.treemap.showLabels">true</option>
+        <option name="treemap_app.treemap.showLegend">true</option>
+        <option name="treemap_app.treemap.showTooltip">true</option>
+        <option name="treemap_app.treemap.useColors">true</option>
+        <option name="treemap_app.treemap.useZoom">true</option>
+      </viz>
+    </panel>
+  </row>
+</form>
