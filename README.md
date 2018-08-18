@@ -48,7 +48,7 @@ The ngrams for investigate bring out a different tactic. While it still definite
 _Investigate Ngram Word Cloud_
 ![investigate_counts](PROJECT_FILES/IMG/investigate_wc.png) 
 
-Next I moved onto exploring the data features that were not text. Here is where a SOC analyst may spend a decent amount of time, under the hood of the email able to see the secrets it is hiding. Changing these into numeric features often resulted in the length of something, quantity of something occurring (along with the unique quantity of something occurring) and whether or not an email has some feature or not. 
+Next I moved onto exploring the data features that were not text. I created a new Splunk dashboard to make exploration easier, repeatable, and as just a landing space for all thoughts in one plase ([xml for the Splunk dashboard here](https://github.com/geekusa/combined-feature-classifier/blob/master/SPLUNK_CONTENT/EDA_dashboard.xml)) Here is where a SOC analyst may spend a decent amount of time, under the hood of the email able to see the secrets it is hiding. Changing these into numeric features often resulted in the length of something, quantity of something occurring (along with the unique quantity of something occurring) and whether or not an email has some feature or not. 
 
 One feature that immediately stood out to me and was a bit surprising at first was the length of the body from the email. 
 ![body_subject_len](PROJECT_FILES/IMG/body_subject_len.png)
@@ -207,7 +207,7 @@ However, as a sanity check, I took 400 of the ignore emails that the models had 
 
 Seeing these results, the performance was much more in-line with what I would expect. Of course the incorrect classifications in this case would be false-positives but as that was all I had, I took it as a sign I was on the right course. 
 
-It was interesting doing a comparison of how the Python workflow compared to that of Splunk. They contain essentially the same steps, but the order of operations moves around a bit. In Splunk though, all of the steps become a single search.
+It was interesting doing a comparison of how the Python workflow compared to that of Splunk. They contain essentially the same steps, but the order of operations moves around a bit. In Splunk though, all of the steps become a single search. The Splunk searches that were used to test, train, and apply can be [found here](https://github.com/geekusa/combined-feature-classifier/blob/master/SPLUNK_CONTENT/savedsearches.conf).
 
 ## Conclusion
 
