@@ -61,6 +61,7 @@ Another interesting though not really surprising find, is that investigate email
 Unsurprising, because often to accomplish an attack requires a user to execute code, though this can be done with a link, which then downloads and executes the code as well this is a good'ol standby.
 
 TLD which stands for Top Level Domain, in this case is the domain that the from address is using. Looking further into this aspect, the TLD is heavily dominated by ".com" but using a different domain is a common way to spoof or masquerade as an official address. Though when seeing this visually and comparing the two classes, we see that ignore emails are likely to have come from a `.com` address, whereas investigate emails may come from a much larger variety of TLDs.
+
 ![treemap_small](PROJECT_FILES/IMG/treemap_small.png)
 
 Though what is also interesting here is that `.net` and `.org` swap places of importance between the two categories and `.net` in general, has greater prominence in the investigate emails.
@@ -187,17 +188,21 @@ Now that I had the model (or rather models since we are talking about voting) I 
 I added the algorithms LinearSVC, ExtraTreesClassifier, and MinMaxScaler. The last algorithm I needed already existed in Splunk's MLTK which was TfidfVectorizer, but as of version 3.4, it was missing two options that would allow a binary output. Because of this I added a customized version of TfidfVectorizer, called TFBinary, that allowed and set as defaults these options to force binary output.
 
 I then provided the Splunk algorithms the same tuned hyper-parameters that I gave Python.
+
 ![splunk_fit](PROJECT_FILES/IMG/splunk_fit.png)
 
 I also tried adding the `VotingClassifier` algorithm, however this algorithm takes other algorithms as arguments. I tried various ways (syntax) of trying to get it to work, but gave up and chalking it up to the fact that Splunk's MLTK's API does specific formatting to arguments provided and currently is simply not possible. Though another reason I was quick to give up was that I knew I could just implement a simple hard vote (meaning majority wins) using a Splunk `eval` statement (VotingClassifier also offers a "soft" voting option).
+
 ![vote](PROJECT_FILES/IMG/vote.png)
 
 One unsettling result that happened was after doing my 80/20 split in Splunk, training my models, and then pitting them against the 20 percent test set, it kept doing perfect predictions on the 20 percent test set.
+
 ![splunk_perfect](PROJECT_FILES/IMG/splunk_perfect.png)
 
 I repeated this exercise several times with different seeds and still received the same results. Though I am not 100% sure what is going on here, one thing I do know is that MLTK is really an abstraction layer to Python, therefore there are going to be some changes and settings going on under the hood that do not exactly match what I was doing in my notebooks. 
 
 However, as a sanity check, I took 400 of the ignore emails that the models had not seen--since I had a large stash of those lying around. 
+
 ![splunk_ignore_unseen](PROJECT_FILES/IMG/splunk_ignore_unseen.png)
 
 Seeing these results, the performance was much more in-line with what I would expect. Of course the incorrect classifications in this case would be false-positives but as that was all I had, I took it as a sign I was on the right course. 
