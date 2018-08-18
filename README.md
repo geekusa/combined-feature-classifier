@@ -171,9 +171,11 @@ The important issue I found here was that the binary/binary model was taking int
 Furthermore, I had one other reason to select the binary/binary set. In security, in many cases there is more concern with false-negative performance than with false-positive performance. Granted false-positives lead to alert fatigue, something no one likes and the basis for a whole other conversation, but a false-negative in this case would be one where the algorithm classified an investigate email incorrectly as an ignore email--meaning that we would not be alerted at all. Looking at the false-negative performance of the two feature sets using a confusion matrix:
 
 _Combined Features Spare/Binary Confusion Matrix_
+
 ![sparse_binary_cm](PROJECT_FILES/IMG/sparse_binary_cm.png)
 
 _Combined Features Binary/Binary Confusion Matrix_
+
 ![binary_binary_cm](PROJECT_FILES/IMG/binary_binary_cm.png)
 
 Here we see that the binary/binary feature set has better false-negative performance--one less. Taking these two reasons into account, I now had a clear winner in my mind, the combined binary/binary feature set.

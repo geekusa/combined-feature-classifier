@@ -28,10 +28,22 @@ Mertens, X. (2017). mime2vt: Unpack MIME attachments from a file and check them 
 Moramarco, S. (n.d.). Phishing Definition and History. Retrieved from https://resources.infosecinstitute.com/category/enterprise/phishing/phishing-definition-and-history/
 
 
+moutai10. (2015, January 24). How to plot a ROC Curve in Scikit learn? Retrieved from https://datamize.wordpress.com/2015/01/24/how-to-plot-a-roc-curve-in-scikit-learn/
+
+
+Plotly. (2015). Receiver Operating Characteristic (ROC). Retrieved from https://plot.ly/scikit-learn/plot-roc/
+
+
 pydata.org. (2017). pandas.concat — pandas 0.22.0 documentation. Retrieved from https://pandas.pydata.org/pandas-docs/version/0.22/generated/pandas.concat.html
 
 
 Python Software Foundation. (2001, 2018). 20.9. quopri — Encode and decode MIME quoted-printable data — Python 3.7.0 documentation. Retrieved from https://docs.python.org/3/library/quopri.html
+
+
+scikit-learn developers. (2017). Confusion matrix — scikit-learn 0.19.2 documentation. Retrieved from http://scikit-learn.org/stable/auto_examples/model_selection/plot_confusion_matrix.html
+
+
+scikit-learn developers. (2017). Feature importances with forests of trees — scikit-learn 0.19.2 documentation. Retrieved from http://scikit-learn.org/stable/auto_examples/ensemble/plot_forest_importances.html
 
 
 scikit-learn developers. (2015). GridSearchCV freezes indefinitely with multithreading enabled (i.e. w/ n_jobs != 1) · Issue #5115 · scikit-learn/scikit-learn. Retrieved from https://github.com/scikit-learn/scikit-learn/issues/5115
@@ -76,6 +88,9 @@ stackoverflow.com. (2011). python - Get random sample from list while maintainin
 stackoverflow.com. (2016). python - How to add a suffix to each column name? Retrieved from https://stackoverflow.com/a/35088280
 
 
+stackoverflow.com. (2014). python - How to see top n entries of term-document matrix after tfidf in scikit-learn. Retrieved from https://stackoverflow.com/a/25219535
+
+
 stackoverflow.com. (2014). python - Replacing blank values (white space) with NaN in pandas. Retrieved from https://stackoverflow.com/a/21942746
 
 
@@ -83,6 +98,9 @@ stackoverflow.com. (2012). python - UnicodeDecodeError: “utf8” codec can’t
 
 
 stackoverflow.com. (2015). Python : How to parse the Body from a raw email , given that raw email does not have a “Body” tag or anything. Retrieved July 27, 2018, from https://stackoverflow.com/a/49295190
+
+
+stackoverflow.com. (2017). scikit learn - How to get a graph with the k most important features from my model? Retrieved from https://stackoverflow.com/a/42429989
 
 
 Stilgherrian. (2017). Resilience to phishing attacks is failing to improve. Retrieved from https://www.zdnet.com/article/resilience-to-phishing-attacks-is-failing-to-improve/
