@@ -3,7 +3,7 @@
 
 ##### Author: Nathan Worsham
 ##### Created for MSDS692 Data Science Practicum II at Regis University, 2018
-##### [YouTube Presentation](https://www.youtube.com/watch?v=hXnPGzBn0zQ)
+##### [YouTube Presentation](https://www.youtube.com/watch?v=HNqZie5o4Z8)
 
 In the dawn of spam filtering there was a standard juxtaposition of ham versus spam, with "ham" meaning good email and "spam" meaning unwanted email. This categorization however, roles up malicious and junk emails together under the "spam" umbrella. Though it is a different branch of spam email, a more malicious sort that often looks like the real thing is called "phishing" or sometimes "spear phishing" when it is extremely targeted.  Phishing is when an attacker or bad actor (note these are fancy security euphemisms for evil) uses an email message in attempt to trick a user to reveal any sort of information--including a username and password--or to get the user to do an action on the actor’s behalf--like wire them money or send them employee W2s, often with links to a fake website that is masquerading to look like it is legitimate (Moramarco, n.d.). Where I work at we use a product called KnowBe4 (https://www.knowbe4.com/) which is primarily used for security awareness training (where we phish our own employees) but it also provides our employees with an option in their email to report something they think is a possibly a phishing email. The problem that happens however, is that often employees don't necessarily understand the difference and will report emails that are simply regular spam emails or emails that the employee is part of a mailing list and not someone trying to scam them.  This causes a lot of noise and requires a security resource to look over the email and decide if it should either be ignored or investigated further.
 
@@ -195,11 +195,11 @@ I also tried adding the `VotingClassifier` algorithm, however this algorithm tak
 
 ![vote](PROJECT_FILES/IMG/vote.png)
 
-One unsettling result that happened was after doing my 80/20 split in Splunk, training my models, and then pitting them against the 20 percent test set, it kept doing perfect predictions on the 20 percent test set.
+One unsettling result that happened was after doing my 80/20 split in Splunk, training my models, and then pitting them against the 20 percent test set, the prediction accuraccy went down considerably to nearly 75%.
 
-![splunk_perfect](PROJECT_FILES/IMG/splunk_perfect.png)
+![splunk_not_perfect](PROJECT_FILES/IMG/splunk_not_perfect.png)
 
-I repeated this exercise several times with different seeds and still received the same results. Though I am not 100% sure what is going on here, one thing I do know is that MLTK is really an abstraction layer to Python, therefore there are going to be some changes and settings going on under the hood that do not exactly match what I was doing in my notebooks. 
+Though I am not 100% sure what is going on here, one thing I do know is that MLTK is really an abstraction layer to Python, therefore there are going to be some changes and settings going on under the hood that do not exactly match what I was doing in my notebooks. 
 
 However, as a sanity check, I took 400 of the ignore emails that the models had not seen--since I had a large stash of those lying around. 
 
@@ -211,10 +211,10 @@ It was interesting doing a comparison of how the Python workflow compared to tha
 
 ## Conclusion
 
-I found that combining text and non-text features provided a better overall model with this data set. Modeled itself after the workflow of a SOC analyst, taking into account all aspects of an email in question. I was pleased with the performance of using machine learning against this problem, with over 90% accuracy and good false-negative response. I feel like this model can start providing a benefit right away in production. I was equally pleased with the experience of moving the models into Splunk. As mentioned, I can then take advantage of Splunk's pipeline and sharing the "search" with others who are not familiar with Machine Learning or even Python might be more inclined to understand what is going on or at least peak their interest.
+I found that combining text and non-text features provided a better overall model with this data set. Modeled itself after the workflow of a SOC analyst, taking into account all aspects of an email in question. I was pleased with the performance of using machine learning against this problem, with over 90% accuracy and good false-negative response. I feel like this model can start providing a benefit right away in production. I was pleased with the experience of moving the models into Splunk but likely will require pushing the limits further to get results closer to what Python provided. As mentioned, I can then take advantage of Splunk's pipeline and sharing the "search" with others who are not familiar with Machine Learning or even Python might be more inclined to understand what is going on or at least peak their interest.
 
 ## Future Work
-As more data comes in over time, I will want to continue to improve the model and provide a way for our SOC to keep on training the model. This could probably be accomplished by appending to a lookup the data source that for example was classified incorrectly--maybe a Splunk "workflow action" will be the way to go. 
+I will want to keep working on getting the Splunk model's results to match closer to the Python's results. Also, as more data comes in over time, I will want to continue to improve the model results as well provide a way for our SOC to keep on training the model. This could probably be accomplished by appending to a lookup the data source that for example was classified incorrectly--maybe a Splunk "workflow action" will be the way to go. 
 
 I feel there is room to bring in further features into the model. I did not deal with multi-valued fields in this iteration as the [SA-mailparser_plus](https://splunkbase.splunk.com/app/4129/) app I created as an example will return a multivalued field with all of the URL lengths. Though more features don't necessarily mean a better model, but in this case I think it could help add to the totality of lenses with which to look through at the emails.
 
