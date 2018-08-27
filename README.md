@@ -218,5 +218,13 @@ I will want to keep working on getting the Splunk model's results to match close
 
 I feel there is room to bring in further features into the model. I did not deal with multi-valued fields in this iteration as the [SA-mailparser_plus](https://splunkbase.splunk.com/app/4129/) app I created as an example will return a multivalued field with all of the URL lengths. Though more features don't necessarily mean a better model, but in this case I think it could help add to the totality of lenses with which to look through at the emails.
 
+## Update
+
+After working through the Splunk problem further, I narrowed down the issue to the problem was with text features. I had neglected in the earlier iteration in to apply the TFIDF binary model settings to the prediction set. Once I did this, the prediction then was comparable to the Python version.
+
+![splunk_fix](PROJECT_FILES/IMG/splunk_fix.png)
+
+Fixed Splunk searches found [here](https://github.com/geekusa/combined-feature-classifier/blob/master/SPLUNK_CONTENT/savedsearches.conf)
+
 ## References
 See https://github.com/geekusa/combined-feature-classifier/blob/master/PROJECT_FILES/References.md for the list of references for this paper and project.
