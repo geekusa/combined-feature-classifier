@@ -224,7 +224,11 @@ After working through the Splunk problem further, I narrowed down the issue to t
 
 ![splunk_fix](PROJECT_FILES/IMG/splunk_fix.png)
 
-Fixed Splunk searches found [here](https://github.com/geekusa/combined-feature-classifier/blob/master/SPLUNK_CONTENT/savedsearches.conf)
+Fixed Splunk searches found [here](https://github.com/geekusa/combined-feature-classifier/blob/master/SPLUNK_CONTENT/savedsearches.conf). Note that images above show the incorrect search, here are the updated images:
+
+![splunk_fit_fix](PROJECT_FILES/IMG/splunk_fit_fix.png)
+
+![vote_fix](PROJECT_FILES/IMG/vote_fix.png)
 
 ## References
 See https://github.com/geekusa/combined-feature-classifier/blob/master/PROJECT_FILES/References.md for the list of references for this paper and project.
