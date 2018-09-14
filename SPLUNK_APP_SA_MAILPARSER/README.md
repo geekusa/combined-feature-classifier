@@ -8,7 +8,7 @@ Available at:
 Splunk App Available at:
 [https://splunkbase.splunk.com/app/4066/](https://splunkbase.splunk.com/app/4129/)
 
-Version: 1.0
+Version: 1.0.1
 
 ##### Author: Nathan Worsham 
 Created as part of MSDS692 Data Science Practicum II at Regis University, 2018 </br>
@@ -99,4 +99,4 @@ This README file constitutes the documentation for the app and will be kept up t
 
 
 ### Release Notes
-Initial Release
+Fixed if email has no from_email address

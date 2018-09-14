@@ -167,7 +167,7 @@ class MailParser(StreamingCommand):
                     record[k] = v
             ## Advanced Attributes
             if self.adv_attrs:
-                if 'from_email' in record: 
+                if 'from_email' in record and record['from_email'] is not None: 
                     match = re.findall(r'[^@]+@(.*)',record['from_email'][0])
                     if match:
                         url = re.sub(r'\.$','',match[0])
