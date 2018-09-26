@@ -230,5 +230,23 @@ Fixed Splunk searches found [here](https://github.com/geekusa/combined-feature-c
 
 ![vote_fix](PROJECT_FILES/IMG/vote_fix.png)
 
+## Another Update
+
+Moving the classifier into production, I found I needed to give some dashboards for viewing the predictions (though of course `investigate` classifictions can become alerted on), training the model further, and measuring the performance against the test set as it continues to train. This is where Splunk's powerful dashboarding features which are so very customizable come into play. 
+
+For viewing the predictions, I have a dashboard that can be searched and clicked on to see further feature details:
+
+![easy_investigate](PROJECT_FILES/IMG/easy_investigate.png)
+
+Likewise, clicking on the plus symbol in a row allows the SOC analyst to further train the model (I have encouraged the use of confirming it has done well in order to grow the training set):
+
+![training_new](PROJECT_FILES/IMG/training_new.png)
+
+Now the model runs on a schedule to rebuild the models and test the performance against the test set and then the performance can be checked like so:
+
+![check_performance](PROJECT_FILES/IMG/check_performance.png)
+
+To run these as scheduled searches I found I had to run `fit` command like so `...| fit LinearSVC target from MMS_* into app:knowbe4_svc |...`, specifically talking about the whole into `app:model_name` (thanks to Andrew Stein at Splunk) which allows the model to then be written outside of the private arena and into a the context of the app I had put together (which is where I was housing the dashboards as well). Anyway the model continues to learn and grow. 
+
 ## References
 See https://github.com/geekusa/combined-feature-classifier/blob/master/PROJECT_FILES/References.md for the list of references for this paper and project.
